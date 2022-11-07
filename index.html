@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Modal Exit Intent</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+
+<body>
+
+<div class="demo-header">Try to leave this page to see the modal showing.</div>
+<div class="ls_info ta-center">The key is in localStorage: <span id="s_ls_info"
+                                                                 style="color: #e67e22; font-weight: bold"></span></div>
+
+<div style="margin: 10px 10px; font-size: 13px">to see the modal again please clear the Local Storage and refresh the page.</div>
+<button class="btn btn-standard" style="margin: 10px 10px" id="s_clear_storage_button">Clear Storage</button>
+
+<script type="text/javascript" src="scripts/jquery.min.js"></script>
+<script type="text/javascript" src="scripts/utils.js"></script>
+<script type="text/javascript" src="scripts/modal.js"></script>
+<script type="text/javascript" src="scripts/modal-base.js"></script>
+
+<script type="text/javascript">
+  const storageKey = 's_exit_detection_tracked';
+  const updateLocalStorage = () => {
+    const isInLocalStorage = localStorage.getItem(storageKey);
+    $('#s_ls_info').text(!!isInLocalStorage);
+  };
+  
+  $(document).ready(function () {
+    updateLocalStorage();
+
+    s_modal_init({
+      modalUrlPath: 'modal_template.html',
+      className: 'modal-test',
+      storage: {
+        expiresMs: 100000
+      },
+      config: {
+        browserConfig: {
+          [BROWSER.CHROME]: true,
+          [BROWSER.FIREFOX]: true,
+          [BROWSER.EDGE]: true
+        },
+        osConfig: {
+          [OS.WINDOWS]: true,
+          [OS.LINUX]: true,
+          [OS.MAC]: true
+        },
+        URLs: {
+          exclude: [
+            '/index.html',
+          ]
+        }
+      },
+      api: {
+        opened: () => {
+          console.log('Modal opened');
+        },
+        closed: () => {
+          console.log('Modal closed');
+        },
+        storageChanged: () => {
+          console.log('Storage changed');
+          updateLocalStorage();
+        },
+        ctaClicked: () => {
+          console.log('CTA clicked');
+        },
+        ctaHovered: () => {
+          console.log('CTA hovered');
+        }
+      }
+    });
+
+    addEventListener('storage', () => {
+      updateLocalStorage();
+    });
+  });
+
+  $('#s_clear_storage_button').on('click', () => {
+    console.log('Storage cleared');
+    localStorage.removeItem(storageKey);
+    updateLocalStorage();
+  })
+</script>
+</body>
+
+</html>
