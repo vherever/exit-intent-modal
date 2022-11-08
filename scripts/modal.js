@@ -1,16 +1,12 @@
 ;(function () {
-  // Define the constructor
   this.Modal = function () {
 
-    // Create global element references
     this.closeButton = null;
     this.modal = null;
     this.overlay = null;
 
-    // Determine proper prefix
     this.transitionEnd = transitionSelect();
 
-    // Define option defaults
     const defaults = {
       autoOpen: false,
       className: 'fade-and-drop',
@@ -20,10 +16,10 @@
       minWidth: 280,
       overlay: true,
       modalClass: '',
-      callbackOnClose: function() {}
+      callbackOnClose: function () {
+      }
     };
 
-    // Create options by extending defaults with the passed in arguments
     if (arguments[0] && typeof arguments[0] === 'object') {
       this.options = extendDefaults(defaults, arguments[0]);
     }
@@ -32,7 +28,6 @@
 
   };
 
-  // Public Methods
   Modal.prototype.close = function () {
     const _ = this;
     this.modal.className = this.modal.className.replace(' modal-open', '');
@@ -58,14 +53,8 @@
     isOpenedCallback && isOpenedCallback();
   };
 
-  // Private Methods
   function buildOut() {
     let content, contentHolder, docFrag, modalClass;
-
-    /*
-     * If content is an HTML string, append the HTML string.
-     * If content is a domNode, append its content.
-     */
 
     if (typeof this.options.content === 'string') {
       content = this.options.content;
@@ -76,17 +65,14 @@
     if (typeof this.options.modalClass === 'string') {
       modalClass = this.options.modalClass;
     }
-    
-    // Create a DocumentFragment to build with
+
     docFrag = document.createDocumentFragment();
 
-    // Create modal element
     this.modal = document.createElement('div');
     this.modal.className = 'modal ' + this.options.className;
     this.modal.style.minWidth = this.options.minWidth + 'px';
     this.modal.style.maxWidth = this.options.maxWidth + 'px';
 
-    // If closeButton option is true, add a close button
     if (this.options.closeButton === true) {
       this.closeButton = document.createElement('a');
       this.closeButton.href = 'javascript:;';
@@ -95,23 +81,19 @@
       this.modal.appendChild(this.closeButton);
     }
 
-    // If overlay is true, add one
     if (this.options.overlay === true) {
       this.overlay = document.createElement('div');
       this.overlay.className = 'modal-overlay ' + this.options.className;
       docFrag.appendChild(this.overlay);
     }
 
-    // Create content area and append to modal
     contentHolder = document.createElement('div');
     contentHolder.className = 'modal-content ' + modalClass;
     contentHolder.innerHTML = content;
     this.modal.appendChild(contentHolder);
 
-    // Append modal to DocumentFragment
     docFrag.appendChild(this.modal);
 
-    // Append DocumentFragment to body
     document.body.appendChild(docFrag);
   }
 
@@ -150,4 +132,162 @@
     if (el.style['OTransition']) return 'oTransitionEnd';
     return 'transitionend';
   }
+
+  /**
+   * Modal usage
+   */
+
+      // Options model
+  const o = {
+        modalUrlPath: '', // modal template destination
+        className: '', // className
+        storage: {
+          type: localStorage, // localStorage || sessionStorage
+          key: '', // storage key
+          expiresMs: null // expire time in milliseconds
+        },
+        ctaUrl: '', // button url to redirect,
+        size: { // modal size
+          maxWidth: '',
+          maxHeight: ''
+        },
+        config: {
+          browserConfig: {}, // allowed browsers
+          osConfig: {}, // allowed os
+          URLs: {
+            include: [], // urls to allow
+            exclude: [] // urls to disallow
+          },
+          IPs: {
+            include: [], // countryCodes to allow
+            exclude: [] // countryCodes to disallow
+          }
+        },
+        api: { // an interface to track events
+          opened: () => {
+          },
+          closed: () => {
+          },
+          storageChanged: () => {
+          },
+          ctaClicked: () => {
+          },
+          ctaHovered: () => {
+          }
+        },
+        loadStrategy: ''
+      };
+
+  const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
+  const STORAGE_EXPIRES_IN_MILLISECONDS = 31556926000; // one year
+
+  const WIDTH_DEFAULT = 620;
+  const HEIGHT_DEFAULT = 350;
+
+  const BROWSER_CONFIG_DEFAULT = {
+    [BROWSER.CHROME]: true,
+    [BROWSER.FIREFOX]: true,
+    [BROWSER.EDGE]: true
+  };
+
+  const OS_CONFIG_DEFAULT = {
+    [OS.WINDOWS]: true,
+    [OS.LINUX]: true,
+    [OS.MAC]: true
+  };
+
+  function init(o, ipCountry) {
+    const {os, browser} = getUserAgentMetaData();
+
+    let modalInstance;
+    let isModalOpened;
+
+    const browserConfig = (o.config && o.config.browserConfig || BROWSER_CONFIG_DEFAULT);
+    const osConfig = (o.config && o.config.osConfig) || OS_CONFIG_DEFAULT;
+
+    const allowedToShowByBrowserAndOs = browserConfig[browser] && osConfig[os];
+
+    const storage = (o.storage && o.storage.type) || localStorage;
+    const storageKey = (o.storage && o.storage.key) || STORAGE_KEY_DEFAULT;
+    const storageExpiresMs = (o.storage && o.storage.expiresMs) || STORAGE_EXPIRES_IN_MILLISECONDS;
+    const size = {
+      maxWidth: (o.size && o.size.maxWidth) || WIDTH_DEFAULT,
+      maxHeight: (o.size && o.size.maxHeight) || HEIGHT_DEFAULT
+    };
+
+    const url = location.pathname;
+
+    const URLsToInclude = (o.config.URLs && o.config.URLs.include) || [];
+    const URLsToExclude = (o.config.URLs && o.config.URLs.exclude) || [];
+
+    const IPsToInclude = (o.config.IPs && o.config.IPs.include) || [];
+    const IPsToExclude = (o.config.IPs && o.config.IPs.exclude) || [];
+
+    const allowedToShowByIncludedUrls = URLsToInclude.length ? URLsToInclude.includes(url) : true;
+    const allowedToShowByExcludedUrls = URLsToExclude.length ? !URLsToExclude.includes(url) : true;
+
+    const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
+    const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
+
+    const isAllowedByStorage = !isNotExpired(storageKey, storage);
+
+    const isAllowedToShowFinal =
+        isAllowedByStorage &&
+        allowedToShowByBrowserAndOs &&
+        (allowedToShowByIncludedUrls && allowedToShowByExcludedUrls) &&
+        (allowedToShowByIncludedIp && allowedToShowByExcludedIp);
+
+    const showModal = () => {
+      if (Modal && !isModalOpened) {
+        isModalOpened = true;
+        fetch(o.modalUrlPath)
+            .then(function (res) {
+              return res.text();
+            })
+            .then(function (tpl) {
+              modalInstance = new Modal({
+                content: tpl,
+                modalClass: o.className || '',
+                maxWidth: size.maxWidth,
+                maxHeight: size.maxHeight,
+                callbackOnClose: function () {
+                  o.api && o.api.closed();
+                }
+              });
+
+              modalInstance.open(o.api && o.api.opened);
+
+              document.getElementById('s_cta_action').addEventListener('click', function () {
+                o.api && o.api.ctaClicked();
+                o.ctaUrl && window.open(o.ctaUrl, '_blank');
+                modalInstance.close();
+              });
+
+              document.getElementsByClassName('s_get_offer_modal_link')[0].addEventListener('mouseover', function () {
+                o.api && o.api.ctaHovered();
+              });
+
+              setWithExpiry(storageKey, storageExpiresMs, storage);
+              o.api && o.api.storageChanged();
+              setTimeout(function () {
+                document.getElementsByClassName('c_modal_t')[0].style.height = size.maxHeight + 'px';
+              }, 10);
+            });
+      }
+    };
+
+    if (isAllowedToShowFinal) {
+      if (o.loadStrategy === 'load') {
+        showModal();
+      } else {
+        document.onmouseout = function (e) {
+          if (e.clientY < 0) {
+            showModal();
+          }
+        };
+      }
+    }
+  }
+
+  window.s_modal_init = init;
 }());

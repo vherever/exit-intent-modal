@@ -11,7 +11,7 @@
 <div class="ls_info ta-center">The key is in localStorage: <span id="s_ls_info" style="color: #e67e22; font-weight: bold"></span></div>
 
 <div style="margin: 10px 10px">
-    <div style="font-size: 13px">to see the modal again please clear the Local Storage and refresh the page.</div>
+    <div style="font-size: 13px">To see the modal again please clear the Local Storage and refresh the page.</div>
     <br>
     <button class="btn btn-standard" id="s_clear_storage_button">Clear Storage</button>
 
@@ -19,30 +19,27 @@
     <u>Main features:</u>
     <ul class="list check">
         <li>Browser / OS detection</li>
-        <li>Modal showing behavior: instant, exit intent</li>
+        <li>Modal showing strategy: instant, exit intent</li>
         <li>Showing by Browser / OS / Page / Country</li>
         <li>Store in SessionStorage / LocalStorage + expiry date</li>
-        <li>Multi-templating, easy to customize</li>
     </ul>
 </div>
 
-<script type="text/javascript" src="scripts/jquery.min.js"></script>
 <script type="text/javascript" src="scripts/utils.js"></script>
 <script type="text/javascript" src="scripts/modal.js"></script>
-<script type="text/javascript" src="scripts/modal-base.js"></script>
 
 <script type="text/javascript">
   const storageKey = 's_exit_detection_tracked';
   const updateLocalStorage = () => {
-    const isInLocalStorage = localStorage.getItem(storageKey);
-    $('#s_ls_info').text(!!isInLocalStorage);
+    const isInLocalStorage = isNotExpired(storageKey, localStorage);
+    document.getElementById('s_ls_info').innerText = String(!!isInLocalStorage);
   };
-  
-  $(document).ready(function () {
+
+  window.addEventListener('DOMContentLoaded', () => {
     updateLocalStorage();
 
     const { os, browser } = getUserAgentMetaData();
-    
+
     s_modal_init({
       modalUrlPath: 'modal_template.html',
       className: 'modal-test',
@@ -61,7 +58,7 @@
           [OS.MAC]: true
         }
       },
-      loadStrategy: 'exitIntent' || 'load',
+      loadStrategy: 'load' || 'exitIntent',
       api: {
         opened: () => {
           console.log(`Modal opened. Browser: ${ browser }, OS: ${ os }`);
@@ -86,12 +83,12 @@
       updateLocalStorage();
     });
   });
-
-  $('#s_clear_storage_button').on('click', () => {
+  
+  document.getElementById('s_clear_storage_button').addEventListener('click', function () {
     console.log('Storage cleared');
     localStorage.removeItem(storageKey);
     updateLocalStorage();
-  })
+  });
 </script>
 </body>
 
