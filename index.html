@@ -8,11 +8,23 @@
 <body>
 
 <div class="demo-header">Try to leave this page to see the modal showing.</div>
-<div class="ls_info ta-center">The key is in localStorage: <span id="s_ls_info"
-                                                                 style="color: #e67e22; font-weight: bold"></span></div>
+<div class="ls_info ta-center">The key is in localStorage: <span id="s_ls_info" style="color: #e67e22; font-weight: bold"></span></div>
 
-<div style="margin: 10px 10px; font-size: 13px">to see the modal again please clear the Local Storage and refresh the page.</div>
-<button class="btn btn-standard" style="margin: 10px 10px" id="s_clear_storage_button">Clear Storage</button>
+<div style="margin: 10px 10px">
+    <div style="font-size: 13px">to see the modal again please clear the Local Storage and refresh the page.</div>
+    <br>
+    <button class="btn btn-standard" id="s_clear_storage_button">Clear Storage</button>
+
+    <br><br>
+    <u>Main features:</u>
+    <ul class="list check">
+        <li>Browser / OS detection</li>
+        <li>Modal showing behavior: instant, exit intent</li>
+        <li>Showing by Browser / OS / Page / Country</li>
+        <li>Store in SessionStorage / LocalStorage + expiry date</li>
+        <li>Multi-templating, easy to customize</li>
+    </ul>
+</div>
 
 <script type="text/javascript" src="scripts/jquery.min.js"></script>
 <script type="text/javascript" src="scripts/utils.js"></script>
@@ -29,6 +41,8 @@
   $(document).ready(function () {
     updateLocalStorage();
 
+    const { os, browser } = getUserAgentMetaData();
+    
     s_modal_init({
       modalUrlPath: 'modal_template.html',
       className: 'modal-test',
@@ -50,7 +64,7 @@
       loadStrategy: 'exitIntent' || 'load',
       api: {
         opened: () => {
-          console.log('Modal opened');
+          console.log(`Modal opened. Browser: ${ browser }, OS: ${ os }`);
         },
         closed: () => {
           console.log('Modal closed');
