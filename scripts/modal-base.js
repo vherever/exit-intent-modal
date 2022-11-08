@@ -1,39 +1,37 @@
 // Options model
 const o = {
-  modalUrlPath: '',
-  className: '',
+  modalUrlPath: '', // modal template destination
+  className: '', // className
   storage: {
-    type: localStorage,
-    key: '',
-    expiresMs: null
+    type: localStorage, // localStorage || sessionStorage
+    key: '', // storage key
+    expiresMs: null // expire time in milliseconds
   },
-  cta: {
-    buttonDomTarget: '',
-    urlToNavigate: ''
-  },
-  size: {
+  ctaUrl: '', // button url to redirect,
+  size: { // modal size
     maxWidth: '',
     maxHeight: ''
   },
   config: {
-    browserConfig: {},
-    osConfig: {},
+    browserConfig: {}, // allowed browsers
+    osConfig: {}, // allowed os
     URLs: {
-      include: [],
-      exclude: []
+      include: [], // urls to allow
+      exclude: [] // urls to disallow
     },
     IPs: {
-      include: [],
-      exclude: []
+      include: [], // countryCodes to allow
+      exclude: [] // countryCodes to disallow
     }
   },
-  api: {
+  api: { // an interface to track events
     opened: () => {},
     closed: () => {},
     storageChanged: () => {},
     ctaClicked: () => {},
     ctaHovered: () => {}
-  }
+  },
+  loadStrategy: ''
 };
 
 const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
@@ -54,7 +52,14 @@ const OS_CONFIG_DEFAULT = {
   [OS.MAC]: true
 };
 
-(function () {
+/**
+ * @requires jQuery
+ */
+;(function ($) {
+  /**
+   * @param o - options object
+   * @param ipCountry - provide country codes in array to allow-disallow showing under specific country code
+   */
   function init(o, ipCountry) {
     const {os, browser} = getUserAgentMetaData();
 
@@ -88,7 +93,7 @@ const OS_CONFIG_DEFAULT = {
     const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
     const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
 
-    const isAllowedByStorage = !storage.getItem(storageKey);
+    const isAllowedByStorage = !isNotExpired(storageKey, storage);
     
     const isAllowedToShowFinal =
         isAllowedByStorage &&
@@ -96,43 +101,56 @@ const OS_CONFIG_DEFAULT = {
         (allowedToShowByIncludedUrls && allowedToShowByExcludedUrls) &&
         (allowedToShowByIncludedIp && allowedToShowByExcludedIp);
     
-    if (isAllowedToShowFinal) {
-      document.onmouseout = function (e) {
-        if (Modal && !isModalOpened && e.clientY < 0) {
-          isModalOpened = true;
-          $.get(o.modalUrlPath, { browser: BROWSERS[browser] }).done((tpl) => {
-            modalInstance = new Modal({
-              content: tpl,
-              modalClass: o.className || '',
-              maxWidth: size.maxWidth,
-              maxHeight: size.maxHeight,
-              callbackOnClose: function () {
-                o.api && o.api.closed();
-              }
-            });
-
-            modalInstance.open(o.api && o.api.opened);
-            
-            $(document).on('click', '#s_cta_action', function () {
-              o.api && o.api.ctaClicked();
-              o.cta && o.cta.urlToNavigate && window.open(o.cta.urlToNavigate, '_blank');
-              modalInstance.close();
-            });
-
-            $(document).on('mouseover', '.s_get_offer_modal_link', function () {
-              o.api && o.api.ctaHovered();
-            });
-
-            storage.setItem(storageKey, 'true');
-            o.api && o.api.storageChanged();
-            setTimeout(function () {
-              document.getElementsByClassName('c_modal_t')[0].style.height = size.maxHeight + 'px';
-            }, 10);
+    const showModal = () => {
+      if (Modal && !isModalOpened) {
+        isModalOpened = true;
+        $.get(o.modalUrlPath, { browser: BROWSERS[browser] }).done((tpl) => {
+          modalInstance = new Modal({
+            content: tpl,
+            modalClass: o.className || '',
+            maxWidth: size.maxWidth,
+            maxHeight: size.maxHeight,
+            callbackOnClose: function () {
+              o.api && o.api.closed();
+            }
           });
-        }
-      };
+
+          modalInstance.open(o.api && o.api.opened);
+
+          $(document).on('click', '#s_cta_action', function () {
+            o.api && o.api.ctaClicked();
+            o.ctaUrl && window.open(o.ctaUrl, '_blank');
+            modalInstance.close();
+          });
+
+          $(document).on('mouseover', '.s_get_offer_modal_link', function () {
+            o.api && o.api.ctaHovered();
+          });
+
+          // storage.setItem(storageKey, 'true');
+          setWithExpiry(storageKey, storageExpiresMs, storage);
+          o.api && o.api.storageChanged();
+          setTimeout(function () {
+            document.getElementsByClassName('c_modal_t')[0].style.height = size.maxHeight + 'px';
+          }, 10);
+        });
+      }
+    };
+    
+    if (isAllowedToShowFinal) {
+      if (o.loadStrategy === 'load') {
+        $(document).ready(function () {
+          showModal();  
+        });
+      } else {
+        document.onmouseout = function (e) {
+          if (e.clientY < 0) {
+            showModal();
+          }
+        };
+      }
     }
   }
 
   window.s_modal_init = init;
-})();
+})(jQuery);

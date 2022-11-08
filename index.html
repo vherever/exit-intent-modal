@@ -33,7 +33,7 @@
       modalUrlPath: 'modal_template.html',
       className: 'modal-test',
       storage: {
-        expiresMs: 100000
+        expiresMs: 10000 // 30 seconds
       },
       config: {
         browserConfig: {
@@ -45,13 +45,9 @@
           [OS.WINDOWS]: true,
           [OS.LINUX]: true,
           [OS.MAC]: true
-        },
-        URLs: {
-          exclude: [
-            '/index.html',
-          ]
         }
       },
+      loadStrategy: 'exitIntent' || 'load',
       api: {
         opened: () => {
           console.log('Modal opened');

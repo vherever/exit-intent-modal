@@ -1,6 +1,5 @@
-(function () {
-
-  // Define our constructor
+;(function () {
+  // Define the constructor
   this.Modal = function () {
 
     // Create global element references
@@ -61,7 +60,6 @@
 
   // Private Methods
   function buildOut() {
-
     let content, contentHolder, docFrag, modalClass;
 
     /*

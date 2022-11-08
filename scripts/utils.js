@@ -139,32 +139,32 @@ function getUserAgentMetaData() {
 
 /**
  * @param key
- * @param ts
+ * @param ttl
  * @param storage
  */
-function setWithExpiry(key, ts, storage) {
+function setWithExpiry(key, ttl, storage) {
   const now = new Date();
 
   storage.setItem(key, JSON.stringify({
-    expiry: now.getTime() + ts
+    expiry: now.getTime() + ttl
   }));
 }
 
 /**
  * @param key
  * @param storage
- * @returns {null|*}
+ * @returns {boolean}
  */
-function getWithExpiry(key, storage) {
+function isNotExpired(key, storage) {
   const itemStr = storage.getItem(key);
   if (!itemStr) {
-    return null;
+    return false;
   }
   const item = JSON.parse(itemStr);
   const now = new Date();
   if (now.getTime() > item.expiry) {
     storage.removeItem(key)
-    return null;
+    return false;
   }
-  return item.value;
+  return true;
 }
