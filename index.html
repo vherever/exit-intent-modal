@@ -6,6 +6,8 @@
 </head>
 
 <body>
+<script type="text/javascript" src="scripts/utils.js"></script>
+<script type="text/javascript" src="scripts/modal.js"></script>
 
 <div class="demo-header">With the "Exit Intent" strategy try to leave this page to see the modal showing.</div>
 <div class="ls_info ta-center">The key is in <span id="s_storage_type"></span>:
@@ -18,7 +20,7 @@
     </div>
     <button class="btn btn-standard" id="s_clear_storage_button" style="margin-left: 5px">Clear Storage</button>
 
-    <br><br>
+    <br>
     <p>This plugin is ideally used for showing different offers before the user leaves the page. It can load right after
         the page loads or when the user tries to leave it. The plugin detects the user browser and operation system, so
         we
@@ -28,6 +30,19 @@
     <p>With this super simple solution you can grab the visitors' attention by triggering a popup before they leave your
         website and asking them to subscribe to your newsletter or show them an interesting offer.
         This is a good way to convert interested visitors into leads before they leave your webpage.</p>
+
+    <div style="margin-top: 15px">
+        <div style="margin-bottom: 5px">Switch demo:</div>
+        <label for="s_radio_1">
+            <input type="radio" id="s_radio_1" name="choice" value="1" checked>
+            Exit intent strategy
+        </label>
+
+        <label for="s_radio_2">
+            <input type="radio" id="s_radio_2" value="2" name="choice" >
+            Initial loading strategy
+        </label>
+    </div>
 
     <br>
     <table>
@@ -59,20 +74,17 @@
     </table>
 </div>
 
-<script type="text/javascript" src="scripts/utils.js"></script>
-<script type="text/javascript" src="scripts/modal.js"></script>
-
 <script type="text/javascript">
   window.addEventListener('DOMContentLoaded', () => {
     const {os, browser} = getUserAgentMetaData();
 
-    const settings = {
-      modalUrlPath: 'templates/modal_template.html',
+    let settings = {
+      modalUrlPath: 'templates/modal_template-1.html',
       className: 'modal-test',
       storage: {
         type: 'localStorage',
         key: 'isModalOpened',
-        expiresMs: 30000 // 30 seconds, after that time the key will be removed from the storage and the modal will be shown again
+        expiresMs: 30000
       },
       permissions: {
         browsers: {
@@ -121,9 +133,46 @@
     };
 
     const storageKey = settings.storage.key || 's_exit_detection_tracked';
+    const modalStrategySelectedKey = 'modalStrategySelected';
     const storageType = settings.storage.type || 'localStorage';
+
+    const handleCheckedValue = function (value) {
+      switch (value) {
+        case '1':
+          settings.modalUrlPath = 'templates/modal_template-1.html';
+          settings.size.maxHeight = 200;
+          settings.loadStrategy = 'exitIntent';
+          break;
+        case '2':
+          settings.modalUrlPath = 'templates/modal_template-2.html'
+          settings.size.maxHeight = 350;
+          settings.loadStrategy = 'initial';
+          break;
+      }
+      setWithExpiry(modalStrategySelectedKey, settings.loadStrategy, 99999, storageType);
+    };
+    
+    const radios = Array.from(document.getElementsByTagName('input')).filter((o) => o.type === 'radio');
+    
+    const initialStrategy = getValueExpired(modalStrategySelectedKey, storageType);
+    if (!modalStrategySelectedKey) {
+      radios[0].checked = true;
+      setWithExpiry(modalStrategySelectedKey, settings.loadStrategy, 99999, storageType);
+      
+    }
+    console.log('initialStrategy', initialStrategy);
+    
+    const checked = radios.find((o) => o.checked);
+    handleCheckedValue(checked.value);
+    
+    radios.forEach((o) => {
+      o.addEventListener('click', function () {
+        handleCheckedValue(this.value);
+      });
+    });
+    
     const updateStorageInformation = () => {
-      const isInLocalStorage = isNotExpired(storageKey, storageType);
+      const isInLocalStorage = getValueExpired(storageKey, storageType);
       document.getElementById('s_storage_info').innerText = String(!!isInLocalStorage);
     };
 
@@ -151,6 +200,6 @@
     });
   });
 </script>
-</body>
 
+</body>
 </html>

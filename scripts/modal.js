@@ -79,8 +79,6 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     if (this.options.closeButton === true) {
       this.closeButton = document.createElement('a');
       this.closeButton.href = 'javascript:;';
-      this.closeButton.innerText = '';
-
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       const path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
       svg.setAttribute('viewBox', '0 0 50 50');
@@ -89,9 +87,6 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
       path.setAttribute('fill', '#e74c3c');
       svg.appendChild(path);
       this.closeButton.appendChild(svg);
-      // document.body.appendChild(svg);
-      
-      // this.closeButton.className = 'modal-close close-button';
       this.modal.appendChild(this.closeButton);
     }
 
@@ -160,7 +155,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     storage: {
       type: localStorage, // localStorage || sessionStorage
       key: '', // storage key
-      expiresMs: null // expire time in milliseconds
+      expiresMs: null // time in ms, after that time the key will be removed from the storage and the modal will be shown again
     },
     ctaUrl: '', // button url to redirect,
     size: {
@@ -249,7 +244,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
     const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
 
-    const isAllowedByStorage = !isNotExpired(storageKey, storage);
+    const isAllowedByStorage = !getValueExpired(storageKey, storage);
 
     const isAllowedToShowConditions =
         isAllowedByStorage &&
@@ -291,7 +286,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
             console.warn('No confirmation button with the id="s_cta_action" provided.');
           }
 
-          setWithExpiry(storageKey, storageExpiresMs, storage);
+          setWithExpiry(storageKey, '', storageExpiresMs, storage);
 
           o.api && o.api.storageChanged();
 
