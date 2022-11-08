@@ -9,14 +9,28 @@ body {
     font-family: Arial, sans-serif;
 }
 
-.btn-standard {
+.btn {
     background-color: #2c3e50;
     color: #ffffff;
-    border: none;
-    padding: 8px 16px;
-    font-size: 15px;
     border-radius: 5px;
     text-decoration: none;
+    border: 2px solid transparent;
+    &:hover {
+        color: #2c3e50;
+        background-color: #ffffff;
+        border: 2px solid #2c3e50;
+    }
+}
+
+.btn-standard {
+    padding: 8px 16px;
+    font-size: 15px;
+}
+
+.btn-great {
+    padding: 12px 24px;
+    font-size: 21px;
+    text-transform: uppercase;
 }
 
 .demo-header {
