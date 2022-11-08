@@ -72,6 +72,7 @@
     this.modal.className = 'modal ' + this.options.className;
     this.modal.style.minWidth = this.options.minWidth + 'px';
     this.modal.style.maxWidth = this.options.maxWidth + 'px';
+    this.modal.style.maxHeight = this.options.maxHeight + 'px';
 
     if (this.options.closeButton === true) {
       this.closeButton = document.createElement('a');
@@ -137,46 +138,48 @@
    * Modal usage
    */
 
-      // Options model
+  /**
+   * Options model
+   */
   const o = {
-        modalUrlPath: '', // modal template destination
-        className: '', // className
-        storage: {
-          type: localStorage, // localStorage || sessionStorage
-          key: '', // storage key
-          expiresMs: null // expire time in milliseconds
-        },
-        ctaUrl: '', // button url to redirect,
-        size: { // modal size
-          maxWidth: '',
-          maxHeight: ''
-        },
-        config: {
-          browserConfig: {}, // allowed browsers
-          osConfig: {}, // allowed os
-          URLs: {
-            include: [], // urls to allow
-            exclude: [] // urls to disallow
-          },
-          IPs: {
-            include: [], // countryCodes to allow
-            exclude: [] // countryCodes to disallow
-          }
-        },
-        api: { // an interface to track events
-          opened: () => {
-          },
-          closed: () => {
-          },
-          storageChanged: () => {
-          },
-          ctaClicked: () => {
-          },
-          ctaHovered: () => {
-          }
-        },
-        loadStrategy: ''
-      };
+    modalUrlPath: '', // modal template destination
+    className: '', // className
+    storage: {
+      type: localStorage, // localStorage || sessionStorage
+      key: '', // storage key
+      expiresMs: null // expire time in milliseconds
+    },
+    ctaUrl: '', // button url to redirect,
+    size: {
+      maxWidth: '',
+      maxHeight: ''
+    },
+    permissions: {
+      browsers: {}, // allowed browsers
+      os: {}, // allowed operation systems
+      locationPathName: {
+        included: [], // showed on pages, location.pathname
+        excluded: [] // pages disallow to show, location.pathname
+      },
+      countryCodes: {
+        included: [], // countryCodes to allow
+        excluded: [] // countryCodes to disallow
+      }
+    },
+    api: { // an interface to track events
+      opened: () => {
+      },
+      closed: () => {
+      },
+      storageChanged: () => {
+      },
+      ctaClicked: () => {
+      },
+      ctaHovered: () => {
+      }
+    },
+    loadStrategy: ''
+  };
 
   const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
   const STORAGE_EXPIRES_IN_MILLISECONDS = 31556926000; // one year
@@ -202,12 +205,12 @@
     let modalInstance;
     let isModalOpened;
 
-    const browserConfig = (o.config && o.config.browserConfig || BROWSER_CONFIG_DEFAULT);
-    const osConfig = (o.config && o.config.osConfig) || OS_CONFIG_DEFAULT;
+    const browserConfig = (o.permissions && o.permissions.browsers || BROWSER_CONFIG_DEFAULT);
+    const osConfig = (o.permissions && o.permissions.os) || OS_CONFIG_DEFAULT;
 
     const allowedToShowByBrowserAndOs = browserConfig[browser] && osConfig[os];
 
-    const storage = (o.storage && o.storage.type) || localStorage;
+    const storage = (o.storage && o.storage.type) || 'localStorage';
     const storageKey = (o.storage && o.storage.key) || STORAGE_KEY_DEFAULT;
     const storageExpiresMs = (o.storage && o.storage.expiresMs) || STORAGE_EXPIRES_IN_MILLISECONDS;
     const size = {
@@ -217,67 +220,80 @@
 
     const url = location.pathname;
 
-    const URLsToInclude = (o.config.URLs && o.config.URLs.include) || [];
-    const URLsToExclude = (o.config.URLs && o.config.URLs.exclude) || [];
+    const pagesToInclude = (o.permissions.locationPathName && o.permissions.locationPathName.included) || [];
+    const pagesExclude = (o.permissions.locationPathName && o.permissions.locationPathName.excluded) || [];
 
-    const IPsToInclude = (o.config.IPs && o.config.IPs.include) || [];
-    const IPsToExclude = (o.config.IPs && o.config.IPs.exclude) || [];
+    const IPsToInclude = (o.permissions.countryCodes && o.permissions.countryCodes.included) || [];
+    const IPsToExclude = (o.permissions.countryCodes && o.permissions.countryCodes.excluded) || [];
 
-    const allowedToShowByIncludedUrls = URLsToInclude.length ? URLsToInclude.includes(url) : true;
-    const allowedToShowByExcludedUrls = URLsToExclude.length ? !URLsToExclude.includes(url) : true;
+    const allowedToShowByIncludedUrls = pagesToInclude.length ? pagesToInclude.includes(url) : true;
+    const allowedToShowByExcludedUrls = pagesExclude.length ? !pagesExclude.includes(url) : true;
+
+    if ((IPsToInclude.length || IPsToExclude.length) && !ipCountry) {
+      console.warn('You need to provide ipCountry first to start using Show by country feature.');
+    }
 
     const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
     const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
 
     const isAllowedByStorage = !isNotExpired(storageKey, storage);
 
-    const isAllowedToShowFinal =
+    const isAllowedToShowConditions =
         isAllowedByStorage &&
         allowedToShowByBrowserAndOs &&
         (allowedToShowByIncludedUrls && allowedToShowByExcludedUrls) &&
         (allowedToShowByIncludedIp && allowedToShowByExcludedIp);
 
-    const showModal = () => {
+    const showModal = function () {
       if (Modal && !isModalOpened) {
         isModalOpened = true;
-        fetch(o.modalUrlPath)
-            .then(function (res) {
-              return res.text();
-            })
-            .then(function (tpl) {
-              modalInstance = new Modal({
-                content: tpl,
-                modalClass: o.className || '',
-                maxWidth: size.maxWidth,
-                maxHeight: size.maxHeight,
-                callbackOnClose: function () {
-                  o.api && o.api.closed();
-                }
-              });
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', o.modalUrlPath);
+        xhr.send();
+        xhr.onload = function () {
+          modalInstance = new Modal({
+            content: xhr.response,
+            modalClass: o.className || '',
+            maxWidth: size.maxWidth,
+            maxHeight: size.maxHeight,
+            callbackOnClose: function () {
+              o.api && o.api.closed();
+            }
+          });
 
-              modalInstance.open(o.api && o.api.opened);
+          modalInstance.open(o.api && o.api.opened);
 
-              document.getElementById('s_cta_action').addEventListener('click', function () {
-                o.api && o.api.ctaClicked();
-                o.ctaUrl && window.open(o.ctaUrl, '_blank');
-                modalInstance.close();
-              });
-
-              document.getElementsByClassName('s_get_offer_modal_link')[0].addEventListener('mouseover', function () {
-                o.api && o.api.ctaHovered();
-              });
-
-              setWithExpiry(storageKey, storageExpiresMs, storage);
-              o.api && o.api.storageChanged();
-              setTimeout(function () {
-                document.getElementsByClassName('c_modal_t')[0].style.height = size.maxHeight + 'px';
-              }, 10);
+          const confirmButton = document.getElementById('s_cta_action');
+          try {
+            confirmButton.addEventListener('click', function () {
+              o.api && o.api.ctaClicked();
+              o.ctaUrl && window.open(o.ctaUrl, '_blank');
+              modalInstance.close();
             });
+
+            confirmButton.addEventListener('mouseover', function () {
+              o.api && o.api.ctaHovered();
+            });
+          } catch {
+            console.warn('No confirmation button with the id="s_cta_action" provided.');
+          }
+
+          setWithExpiry(storageKey, storageExpiresMs, storage);
+
+          o.api && o.api.storageChanged();
+
+          // Close modal if clicked Escape
+          document.addEventListener('keydown', (event) => {
+            if (event.code.toLowerCase() === 'escape') {
+              modalInstance.close();
+            }
+          });
+        };
       }
     };
 
-    if (isAllowedToShowFinal) {
-      if (o.loadStrategy === 'load') {
+    if (isAllowedToShowConditions) {
+      if (o.loadStrategy === 'initial') {
         showModal();
       } else {
         document.onmouseout = function (e) {

@@ -7,87 +7,148 @@
 
 <body>
 
-<div class="demo-header">Try to leave this page to see the modal showing.</div>
-<div class="ls_info ta-center">The key is in localStorage: <span id="s_ls_info" style="color: #e67e22; font-weight: bold"></span></div>
+<div class="demo-header">With the "Exit Intent" strategy try to leave this page to see the modal showing.</div>
+<div class="ls_info ta-center">The key is in <span id="s_storage_type"></span>:
+    <span id="s_storage_info" style="color: #e67e22; font-weight: bold"></span>
+</div>
 
-<div style="margin: 10px 10px">
-    <div style="font-size: 13px">To see the modal again please clear the Local Storage and refresh the page.</div>
-    <br>
-    <button class="btn btn-standard" id="s_clear_storage_button">Clear Storage</button>
+<div style="max-width: 960px; margin: 25px auto;">
+    <div style="font-size: 13px; display: inline-block">To see the modal again please clear the storage and refresh the
+        page.
+    </div>
+    <button class="btn btn-standard" id="s_clear_storage_button" style="margin-left: 5px">Clear Storage</button>
 
     <br><br>
-    <u>Main features:</u>
-    <ul class="list check">
-        <li>Browser / OS detection</li>
-        <li>Modal showing strategy: instant, exit intent</li>
-        <li>Showing by Browser / OS / Page / Country</li>
-        <li>Store in SessionStorage / LocalStorage + expiry date</li>
-    </ul>
+    <p>This plugin is ideally used for showing different offers before the user leaves the page. It can load right after
+        the page loads or when the user tries to leave it. The plugin detects the user browser and operation system, so
+        we
+        can easily setup to show in the operation system, and specified browser, allow or disallow it to show on
+        concrete pages, or even allow or disallow it to show under the list of countries (you need to detect the user by
+        IP).</p>
+    <p>With this super simple solution you can grab the visitors' attention by triggering a popup before they leave your
+        website and asking them to subscribe to your newsletter or show them an interesting offer.
+        This is a good way to convert interested visitors into leads before they leave your webpage.</p>
+
+    <br>
+    <table>
+        <tr>
+            <td width="30%">
+                <u>Main features:</u>
+                <ul class="list check">
+                    <li>Loading strategy:
+                        <ul class="list check">
+                            <li>Instant show</li>
+                            <li>Exit intent</li>
+                        </ul>
+                    </li>
+                    <li>Show by:
+                        <ul class="list check">
+                            <li>Operation System</li>
+                            <li>Browser</li>
+                            <li>Page</li>
+                            <li>Country</li>
+                        </ul>
+                    </li>
+                </ul>
+            </td>
+            <td width="70%">
+                <div>Settings Object:</div>
+                <code id="s_settings_preview"></code>
+            </td>
+        </tr>
+    </table>
 </div>
 
 <script type="text/javascript" src="scripts/utils.js"></script>
 <script type="text/javascript" src="scripts/modal.js"></script>
 
 <script type="text/javascript">
-  const storageKey = 's_exit_detection_tracked';
-  const updateLocalStorage = () => {
-    const isInLocalStorage = isNotExpired(storageKey, localStorage);
-    document.getElementById('s_ls_info').innerText = String(!!isInLocalStorage);
-  };
-
   window.addEventListener('DOMContentLoaded', () => {
-    updateLocalStorage();
+    const {os, browser} = getUserAgentMetaData();
 
-    const { os, browser } = getUserAgentMetaData();
-
-    s_modal_init({
-      modalUrlPath: 'modal_template.html',
+    const settings = {
+      modalUrlPath: 'templates/modal_template.html',
       className: 'modal-test',
       storage: {
-        expiresMs: 10000 // 30 seconds
+        type: 'localStorage',
+        key: 'isModalOpened',
+        expiresMs: 30000 // 30 seconds, after that time the key will be removed from the storage and the modal will be shown again
       },
-      config: {
-        browserConfig: {
+      permissions: {
+        browsers: {
           [BROWSER.CHROME]: true,
           [BROWSER.FIREFOX]: true,
           [BROWSER.EDGE]: true
         },
-        osConfig: {
+        os: {
           [OS.WINDOWS]: true,
           [OS.LINUX]: true,
           [OS.MAC]: true
+        },
+        locationPathName: {
+          included: [], // location.pathname, a list of subPaths to show on, slash required
+          excluded: ['/page2'] // location.pathname, a list of subPaths to be ignored, slash required
+        },
+        countryCodes: {
+          included: [], // country codes to be used in lowerCase
+          excluded: [] // country codes to be ignored in lowerCase
         }
       },
-      loadStrategy: 'load' || 'exitIntent',
+      size: {
+        maxWidth: 400,
+        maxHeight: 310
+      },
+      ctaUrl: 'https://www.google.com',
+      loadStrategy: 'initial' || 'exitIntent',
       api: {
         opened: () => {
-          console.log(`Modal opened. Browser: ${ browser }, OS: ${ os }`);
+          console.log(`Modal opened. Browser: ${browser}, OS: ${os}`);
         },
         closed: () => {
           console.log('Modal closed');
         },
         storageChanged: () => {
           console.log('Storage changed');
-          updateLocalStorage();
+          updateStorageInformation();
         },
         ctaClicked: () => {
-          console.log('CTA clicked');
+          console.log('Confirm button clicked');
         },
         ctaHovered: () => {
-          console.log('CTA hovered');
+          console.log('Confirm button hovered');
         }
       }
+    };
+
+    const storageKey = settings.storage.key || 's_exit_detection_tracked';
+    const storageType = settings.storage.type || 'localStorage';
+    const updateStorageInformation = () => {
+      const isInLocalStorage = isNotExpired(storageKey, storageType);
+      document.getElementById('s_storage_info').innerText = String(!!isInLocalStorage);
+    };
+
+    updateStorageInformation();
+
+    document.getElementById('s_storage_type').innerText = settings.storage.type;
+    document.getElementById('s_settings_preview').innerText = JSON.stringify(settings, undefined, 2);
+
+    /**
+     * @description get countryCode from getIP API
+     */
+    const currentCountryCode = undefined;
+
+    s_modal_init(settings, currentCountryCode);
+
+    // Listen the storage change event
+    addEventListener('storage', () => {
+      updateStorageInformation();
     });
 
-    addEventListener('storage', () => {
-      updateLocalStorage();
+    document.getElementById('s_clear_storage_button').addEventListener('click', function () {
+      console.log('Storage cleared');
+      removeFromStorage(storageKey, storageType);
+      updateStorageInformation();
     });
-  });
-  
-  document.getElementById('s_clear_storage_button').addEventListener('click', function () {
-    console.log('Storage cleared');
-    localStorage.removeItem(storageKey);
-    updateLocalStorage();
   });
 </script>
 </body>
