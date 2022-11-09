@@ -87,6 +87,7 @@
                         <u>loadStrategy</u> - the method of how the modal should be shown. (opt, default - <b>exitIntent</b>)<br>
                         loadStrategy: exitIntent - show the modal when user tries to leave the page.<br>
                         loadStrategy: initial - show the modal right after the page initialization.<br>
+                        loadStrategy: { timeout: ms } - show the modal after a timeout is completed.
                     </li>
                     <li>
                         <u>api</u> - API to handle events (opt)<br>
@@ -145,7 +146,7 @@
         maxHeight: 350 // 220 for templates/modal_template-2.html
       },
       ctaUrl: 'https://www.google.com',
-      loadStrategy: 'exitIntent' || 'initial',
+      loadStrategy: 'exitIntent', // 'exitIntent' / 'initial' / { timeout: 5000 },
       api: {
         opened: () => {
           console.log(`Modal opened. Browser: ${browser}, OS: ${os}`);

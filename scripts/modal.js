@@ -1,5 +1,3 @@
-const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable-background="new 0 0 512 512" version="1.1" viewBox="0 0 512 512" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><ellipse class="" cx="256" cy="256" rx="256" ry="255.83" fill="#e04f5f" style="" data-original="#e04f5f"/><g transform="matrix(-.7071 .7071 -.7071 -.7071 77.26 32)" fill="#fff"><rect class="" x="3.98" y="-427.62" width="55.992" height="285.67" style="" data-original="#ffffff"/><rect class="" x="-110.83" y="-312.82" width="285.67" height="55.992" style="" data-original="#ffffff"/></g></svg>\n';
-
 ;(function () {
   this.Modal = function () {
 
@@ -125,14 +123,16 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
       });
     }
 
-    if (this.overlay) {
-      const that = this;
-      this.overlay.addEventListener('click', function () {
-        that.close.apply(that);
-        that.options.callbackOnClose.apply(that);
-      });
-    }
-
+    // Wait until overlay and modal loading completed
+    setTimeout(() => {
+      if (this.overlay) {
+        const that = this;
+        this.overlay.addEventListener('click', function () {
+          that.close.apply(that);
+          that.options.callbackOnClose.apply(that);
+        });
+      }
+    }, 2000);
   }
 
   function transitionSelect() {
@@ -184,7 +184,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
       ctaHovered: () => {
       }
     },
-    loadStrategy: ''
+    loadStrategy: '' || { timeout: null }
   };
 
   const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
@@ -297,20 +297,26 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     };
 
     if (isAllowedToShowConditions) {
-      switch (o.loadStrategy) {
-        case "initial":
+      if (typeof o.loadStrategy === 'object' && o.loadStrategy.timeout) {
+        setTimeout(function () {
           showModal();
-          break;
-        case "exitIntent":
-          document.onmouseout = function (e) {
-            if (e.clientY < 0) {
-              showModal();
-            }
-          };
-          break;
-        default:
-          showModal();
-          break;
+        }, o.loadStrategy.timeout);
+      } else {
+        switch (o.loadStrategy) {
+          case "initial":
+            showModal();
+            break;
+          case "exitIntent":
+            document.onmouseout = function (e) {
+              if (e.clientY < 0) {
+                showModal();
+              }
+            };
+            break;
+          default:
+            showModal();
+            break;
+        }
       }
     }
   }
