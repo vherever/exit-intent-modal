@@ -144,7 +144,6 @@ function getUserAgentMetaData() {
  */
 function setWithExpiry(key, ttl, storageType) {
   const storage = storageType === 'localStorage' ? localStorage : sessionStorage;
-  console.log('storage', storage);
   const now = new Date();
 
   storage.setItem(key, JSON.stringify({

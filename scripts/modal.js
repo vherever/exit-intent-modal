@@ -155,7 +155,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     storage: {
       type: localStorage, // localStorage || sessionStorage
       key: '', // storage key
-      expiresMs: null // time in ms, after that time the key will be removed from the storage and the modal will be shown again
+      expiresInDays: null // time in days, after that time the key will be removed from the storage and the modal will be shown again
     },
     ctaUrl: '', // button url to redirect,
     size: {
@@ -179,8 +179,6 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
       },
       closed: () => {
       },
-      storageChanged: () => {
-      },
       ctaClicked: () => {
       },
       ctaHovered: () => {
@@ -190,7 +188,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
   };
 
   const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
-  const STORAGE_EXPIRES_IN_MILLISECONDS = 31556926000; // one year
+  const STORAGE_EXPIRES_IN_DAYS = 30; // one month
 
   const WIDTH_DEFAULT = 620;
   const HEIGHT_DEFAULT = 350;
@@ -220,7 +218,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
 
     const storage = (o.storage && o.storage.type) || 'localStorage';
     const storageKey = (o.storage && o.storage.key) || STORAGE_KEY_DEFAULT;
-    const storageExpiresMs = (o.storage && o.storage.expiresMs) || STORAGE_EXPIRES_IN_MILLISECONDS;
+    const storageExpiresInDays = (o.storage && o.storage.expiresInDays) || STORAGE_EXPIRES_IN_DAYS;
     const size = {
       maxWidth: (o.size && o.size.maxWidth) || WIDTH_DEFAULT,
       maxHeight: (o.size && o.size.maxHeight) || HEIGHT_DEFAULT
@@ -271,7 +269,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
 
           modalInstance.open(o.api && o.api.opened);
 
-          const confirmButton = document.getElementById('s_cta_action');
+          const confirmButton = document.querySelector('button[type="submit"]');
           try {
             confirmButton.addEventListener('click', function () {
               o.api && o.api.ctaClicked();
@@ -283,13 +281,11 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
               o.api && o.api.ctaHovered();
             });
           } catch {
-            console.warn('No confirmation button with the id="s_cta_action" provided.');
+            console.warn('No confirmation button[type="submit"] provided.');
           }
 
-          setWithExpiry(storageKey, storageExpiresMs, storage);
-
-          o.api && o.api.storageChanged();
-
+          setWithExpiry(storageKey, storageExpiresInDays * 86400000, storage);
+          
           // Close modal if clicked Escape
           document.addEventListener('keydown', (event) => {
             if (event.code.toLowerCase() === 'escape') {
@@ -301,14 +297,20 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     };
 
     if (isAllowedToShowConditions) {
-      if (o.loadStrategy === 'initial') {
-        showModal();
-      } else {
-        document.onmouseout = function (e) {
-          if (e.clientY < 0) {
-            showModal();
-          }
-        };
+      switch (o.loadStrategy) {
+        case "initial":
+          showModal();
+          break;
+        case "exitIntent":
+          document.onmouseout = function (e) {
+            if (e.clientY < 0) {
+              showModal();
+            }
+          };
+          break;
+        default:
+          showModal();
+          break;
       }
     }
   }

@@ -30,59 +30,105 @@
     <p>With this super simple solution you can grab the visitors' attention by triggering a popup before they leave your
         website and asking them to subscribe to your newsletter or show them an interesting offer.
         This is a good way to convert interested visitors into leads before they leave your webpage.</p>
-
-    <br>
+    
+    <h3>Main features:</h3>
+    <ul class="list check">
+        <li>Loading strategy: Instant show | Exit intent</li>
+        <li>Show by: Operation System | Browser | Page | Country (detecting IP-address is not included here)</li>
+    </ul>
+    
+    <h3>Setup the modal</h3>
+    <h4>1. Create your own custom modal template, it can be in HTML or PHP format</h4>
+    <p>The required part here is the submit button: button[type="submit"].</p>
+    
+    <h4>2. Style your template as you wish. You can create your own custom modals with any content inside</h4>
+    <div>
+        <p>You can style overlay by referring to the class <b>modal-overlay</b>:</p>
+        <code>.modal-overlay { background-color: #5c545fe3; }</code>
+    </div>
+    
+    <h4>3. Provide the Settings Object</h4>
     <table>
         <tr>
             <td width="30%">
-                <u>Main features:</u>
-                <ul class="list check">
-                    <li>Loading strategy:
-                        <ul class="list check">
-                            <li>Instant show</li>
-                            <li>Exit intent</li>
-                        </ul>
+                <code id="s_settings_preview"></code>
+            </td>
+            <td width="70%">
+                <ul style="font-size: 13px">
+                    <li><u>modalUrlPath</u> - the template path, (required).</li>
+                    <li><u>className</u> - a custom class for your content wrapper, (opt).</li>
+                    <li>
+                        <u>storage.type</u> - <b>localStorage</b> or <b>sessionStorage</b>. (opt, default - <b>localStorage</b>)<br>
+                        <u>storage.key</u> - a unique id to store and track the opened status of the modal. (opt, default - <b>s_exit_detection_tracked</b>)<br>
+                        <u>storage.expiresInDays</u> - a period in days, after the storage will be cleared and the modal is ready to show again. (opt, default - <b>30 days</b>)
                     </li>
-                    <li>Show by:
-                        <ul class="list check">
-                            <li>Operation System</li>
-                            <li>Browser</li>
-                            <li>Page</li>
-                            <li>Country</li>
-                        </ul>
+                    <li>
+                        <u>permissions.os</u> - you can specify in which operation systems should the modal be opened. (opt, default - WINDOWS, LINUX, MAC - <b>true</b>)<br>
+                        <u>permissions.browsers</u> - you can specify in which browsers should the modal be opened. (opt, default - CHROME, FIREFOX, EDGE - <b>true</b>)<br>
+                        <u>permissions.locationPathName</u> - is javascript <b>location.pathname</b>, a list of subPaths to show on, slash required, use included or excluded. (opt)<br>
+                        <u>permissions.locationPathName.included</u> - include the pages you want the modal to be shown on. (opt, default - <b>[]</b>)<br>
+                        <u>permissions.locationPathName.excluded</u> - exclude the pages you don't want the modal to be shown on. (opt, default - <b>[]</b>)
+                    </li>
+                    <li>
+                        <u>permissions.countryCodes</u> - you can specify under which country codes should the modal be opened, use included or excluded. (opt)<br>
+                        <u>permissions.countryCodes.included</u> - include the country codes you want the modal to be shown on.<br>
+                        <u>permissions.countryCodes.excluded</u> - exclude the country codes you don't want the modal to be shown on.
+                    </li>
+                    <li>
+                        <u>size</u> - provide the size of the modal. (opt)<br>
+                        <u>size.maxWidth</u> - the maximum width of the modal. (opt, default - <b>620</b>)<br>
+                        <u>size.maxHeight</u> - the maximum height of the modal. (opt, default - <b>350</b>)
+                    </li>
+                    <li>
+                        <u>ctaUrl</u> - the redirect URL after submit button clicked. (opt)
+                    </li>
+                    <li>
+                        <u>loadStrategy</u> - the method of how the modal should be shown. (opt, default - <b>exitIntent</b>)<br>
+                        loadStrategy: exitIntent - show the modal when user tries to leave the page.<br>
+                        loadStrategy: initial - show the modal right after the page initialization.<br>
+                    </li>
+                    <li>
+                        <u>api</u> - API to handle events (opt)<br>
+                        <u>api.opened()</u> - triggers when the modal is opened.<br>
+                        <u>api.closed()</u> - triggers when the modal is closed.<br>
+                        <u>api.ctaClicked()</u> - triggers when the submit button is clicked.<br>
+                        <u>api.ctaHovered()</u> - triggers when hovering over the submit button.
                     </li>
                 </ul>
             </td>
-            <td width="70%">
-                <div>Settings Object:</div>
-                <code id="s_settings_preview"></code>
-            </td>
         </tr>
     </table>
+    
+    <h4>4. Finally, initialize the plugin calling</h4>
+    <p>After the settings object is provided, run the plugin by wrapping it in the DOM ready event:</p>
+    <code>window.addEventListener('DOMContentLoaded', function() { s_modal_init(settings); });</code>
+    <p>or if you are using jQuery:</p>
+    <code>$(document).ready(function() { s_modal_init(settings); });</code>
+    <p>If you want to use show the modal for users under specific countries only you can detect the IP-address first, get the current countryCode and pass this parameter into the plugin call like that: <b>s_modal_init(settings, countryCode);</b> and be sure to setup country codes list in settings object.</p>
 </div>
 
 <script type="text/javascript">
   window.addEventListener('DOMContentLoaded', () => {
     const {os, browser} = getUserAgentMetaData();
 
-    let settings = {
-      modalUrlPath: 'templates/modal_template-2.html',
+    const settings = {
+      modalUrlPath: 'templates/modal_template-2.html', // 'templates/modal_template-2.html',
       className: 'modal-test',
       storage: {
         type: 'localStorage',
         key: 'isModalOpened',
-        expiresMs: 30000
+        expiresInDays: 1 / 24 / 60 / 3 // 20 seconds = 1 day / 24 hours / 60 min / 3
       },
       permissions: {
-        browsers: {
-          [BROWSER.CHROME]: true,
-          [BROWSER.FIREFOX]: true,
-          [BROWSER.EDGE]: true
-        },
         os: {
           [OS.WINDOWS]: true,
           [OS.LINUX]: true,
           [OS.MAC]: true
+        },
+        browsers: {
+          [BROWSER.CHROME]: true,
+          [BROWSER.FIREFOX]: true,
+          [BROWSER.EDGE]: true
         },
         locationPathName: {
           included: [], // location.pathname, a list of subPaths to show on, slash required
@@ -95,20 +141,19 @@
       },
       size: {
         maxWidth: 400,
-        maxHeight: 220
+        maxHeight: 350 // 220 for templates/modal_template-2.html
       },
       ctaUrl: 'https://www.google.com',
       loadStrategy: 'exitIntent' || 'initial',
       api: {
         opened: () => {
           console.log(`Modal opened. Browser: ${browser}, OS: ${os}`);
+          setTimeout(function() {
+            updateStorageInformation();
+          }, 0);
         },
         closed: () => {
           console.log('Modal closed');
-        },
-        storageChanged: () => {
-          console.log('Storage changed');
-          updateStorageInformation();
         },
         ctaClicked: () => {
           console.log('Confirm button clicked');
