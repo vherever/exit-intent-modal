@@ -35,6 +35,7 @@
     <ul class="list check">
         <li>Loading strategy: Instant show | Exit intent</li>
         <li>Show by: Operation System | Browser | Page | Country (detecting IP-address is not included here)</li>
+        <li>Easy to set up to show different modal templates for different pages, operation systems, browsers, and even for different countries.</li>
     </ul>
     
     <h3>Setup the modal</h3>
@@ -112,7 +113,7 @@
     const {os, browser} = getUserAgentMetaData();
 
     const settings = {
-      modalUrlPath: 'templates/modal_template-2.html', // 'templates/modal_template-2.html',
+      modalUrlPath: 'templates/modal_template-1.html', // 'templates/modal_template-2.html',
       className: 'modal-test',
       storage: {
         type: 'localStorage',
