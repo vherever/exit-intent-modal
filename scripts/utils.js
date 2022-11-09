@@ -21,12 +21,6 @@ const BROWSER = {
   OTHER: 'OTHER',
 };
 
-const BROWSERS = {
-  CHROME: 'Chrome',
-  FIREFOX: 'Firefox',
-  EDGE: 'Edge'
-};
-
 /**
  * @returns {boolean}
  */
