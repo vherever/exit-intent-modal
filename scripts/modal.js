@@ -189,12 +189,16 @@
       os: {
         [OS.WINDOWS]: true,
         [OS.LINUX]: true,
-        [OS.MAC]: true
+        [OS.MAC]: true,
+        [OS.ANDROID]: false,
+        [OS.IOS]: false,
+        [OS.OTHER]: false,
       },
       browsers: {
         [BROWSER.CHROME]: true,
         [BROWSER.FIREFOX]: true,
-        [BROWSER.EDGE]: true
+        [BROWSER.EDGE]: true,
+        [BROWSER.OTHER]: false
       },
       locationPathName: {
         included: [],
