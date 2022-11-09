@@ -31,19 +31,6 @@
         website and asking them to subscribe to your newsletter or show them an interesting offer.
         This is a good way to convert interested visitors into leads before they leave your webpage.</p>
 
-    <div style="margin-top: 15px">
-        <div style="margin-bottom: 5px">Switch demo:</div>
-        <label for="s_radio_1">
-            <input type="radio" id="s_radio_1" name="choice" value="1" checked>
-            Exit intent strategy
-        </label>
-
-        <label for="s_radio_2">
-            <input type="radio" id="s_radio_2" value="2" name="choice" >
-            Initial loading strategy
-        </label>
-    </div>
-
     <br>
     <table>
         <tr>
@@ -79,7 +66,7 @@
     const {os, browser} = getUserAgentMetaData();
 
     let settings = {
-      modalUrlPath: 'templates/modal_template-1.html',
+      modalUrlPath: 'templates/modal_template-2.html',
       className: 'modal-test',
       storage: {
         type: 'localStorage',
@@ -108,10 +95,10 @@
       },
       size: {
         maxWidth: 400,
-        maxHeight: 350
+        maxHeight: 220
       },
       ctaUrl: 'https://www.google.com',
-      loadStrategy: 'initial' || 'exitIntent',
+      loadStrategy: 'exitIntent' || 'initial',
       api: {
         opened: () => {
           console.log(`Modal opened. Browser: ${browser}, OS: ${os}`);
@@ -133,46 +120,10 @@
     };
 
     const storageKey = settings.storage.key || 's_exit_detection_tracked';
-    const modalStrategySelectedKey = 'modalStrategySelected';
     const storageType = settings.storage.type || 'localStorage';
-
-    const handleCheckedValue = function (value) {
-      switch (value) {
-        case '1':
-          settings.modalUrlPath = 'templates/modal_template-1.html';
-          settings.size.maxHeight = 200;
-          settings.loadStrategy = 'exitIntent';
-          break;
-        case '2':
-          settings.modalUrlPath = 'templates/modal_template-2.html'
-          settings.size.maxHeight = 350;
-          settings.loadStrategy = 'initial';
-          break;
-      }
-      setWithExpiry(modalStrategySelectedKey, settings.loadStrategy, 99999, storageType);
-    };
-    
-    const radios = Array.from(document.getElementsByTagName('input')).filter((o) => o.type === 'radio');
-    
-    const initialStrategy = getValueExpired(modalStrategySelectedKey, storageType);
-    if (!modalStrategySelectedKey) {
-      radios[0].checked = true;
-      setWithExpiry(modalStrategySelectedKey, settings.loadStrategy, 99999, storageType);
-      
-    }
-    console.log('initialStrategy', initialStrategy);
-    
-    const checked = radios.find((o) => o.checked);
-    handleCheckedValue(checked.value);
-    
-    radios.forEach((o) => {
-      o.addEventListener('click', function () {
-        handleCheckedValue(this.value);
-      });
-    });
     
     const updateStorageInformation = () => {
-      const isInLocalStorage = getValueExpired(storageKey, storageType);
+      const isInLocalStorage = isNotExpired(storageKey, storageType);
       document.getElementById('s_storage_info').innerText = String(!!isInLocalStorage);
     };
 

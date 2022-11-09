@@ -244,7 +244,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
     const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
     const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
 
-    const isAllowedByStorage = !getValueExpired(storageKey, storage);
+    const isAllowedByStorage = !isNotExpired(storageKey, storage);
 
     const isAllowedToShowConditions =
         isAllowedByStorage &&
@@ -286,7 +286,7 @@ const iconCloseSVG = '<?xml version="1.0" encoding="UTF-8"?><svg class="" enable
             console.warn('No confirmation button with the id="s_cta_action" provided.');
           }
 
-          setWithExpiry(storageKey, '', storageExpiresMs, storage);
+          setWithExpiry(storageKey, storageExpiresMs, storage);
 
           o.api && o.api.storageChanged();
 

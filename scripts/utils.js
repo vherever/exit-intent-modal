@@ -139,16 +139,15 @@ function getUserAgentMetaData() {
 
 /**
  * @param key
- * @param value
  * @param ttl
  * @param storageType
  */
-function setWithExpiry(key, value, ttl, storageType) {
+function setWithExpiry(key, ttl, storageType) {
   const storage = storageType === 'localStorage' ? localStorage : sessionStorage;
+  console.log('storage', storage);
   const now = new Date();
 
   storage.setItem(key, JSON.stringify({
-    value,
     expiry: now.getTime() + ttl
   }));
 }
@@ -156,21 +155,21 @@ function setWithExpiry(key, value, ttl, storageType) {
 /**
  * @param key
  * @param storageType
- * @returns {string|null}
+ * @returns {boolean}
  */
-function getValueExpired(key, storageType) {
+function isNotExpired(key, storageType) {
   const storage = storageType === 'localStorage' ? localStorage : sessionStorage;
   const itemStr = storage.getItem(key);
   if (!itemStr) {
-    return null;
+    return false;
   }
   const item = JSON.parse(itemStr);
   const now = new Date();
   if (now.getTime() > item.expiry) {
     storage.removeItem(key)
-    return null;
+    return false;
   }
-  return item.value;
+  return true;
 }
 
 function removeFromStorage(key, storageType) {
