@@ -15,6 +15,7 @@
 </div>
 
 <div style="max-width: 960px; margin: 25px auto;">
+    <h2>Modal plugin with pure javascript</h2>
     <div style="font-size: 13px; display: inline-block">To see the modal again please clear the storage and refresh the
         page.
     </div>
@@ -33,9 +34,10 @@
     
     <h3>Main features:</h3>
     <ul class="list check">
-        <li>Loading strategy: Instant show | Exit intent</li>
+        <li>Loading strategy: Instant show | Exit intent | Timeout</li>
         <li>Show by: Operation System | Browser | Page | Country (detecting IP-address is not included here)</li>
         <li>Easy to set up to show different modal templates for different pages, operation systems, browsers, and even for different countries.</li>
+        <li>Zero dependencies.</li>
     </ul>
     
     <h3>Setup the modal</h3>
@@ -79,9 +81,6 @@
                         <u>size</u> - provide the size of the modal. (opt)<br>
                         <u>size.maxWidth</u> - the maximum width of the modal. (opt, default - <b>620</b>)<br>
                         <u>size.maxHeight</u> - the maximum height of the modal. (opt, default - <b>350</b>)
-                    </li>
-                    <li>
-                        <u>ctaUrl</u> - the redirect URL after submit button clicked. (opt)
                     </li>
                     <li>
                         <u>loadStrategy</u> - the method of how the modal should be shown. (opt, default - <b>exitIntent</b>)<br>
@@ -134,10 +133,10 @@
         },
         locationPathName: {
           included: [], // location.pathname, a list of subPaths to show on, slash required
-          excluded: ['/page2'] // location.pathname, a list of subPaths to be ignored, slash required
+          excluded: [] // location.pathname, a list of subPaths to be ignored, slash required, ['/page1', '/page2']
         },
         countryCodes: {
-          included: [], // country codes to be used in lowerCase
+          included: [], // country codes to be used in lowerCase ['ca', 'us']
           excluded: [] // country codes to be ignored in lowerCase
         }
       },
@@ -145,7 +144,6 @@
         maxWidth: 400,
         maxHeight: 350 // 220 for templates/modal_template-2.html
       },
-      ctaUrl: 'https://www.google.com',
       loadStrategy: 'exitIntent', // 'exitIntent' / 'initial' / { timeout: 5000 },
       api: {
         opened: () => {
@@ -158,6 +156,9 @@
           console.log('Modal closed');
         },
         ctaClicked: () => {
+          // redirect to external URL or get input value here.
+          // window.open('https://www...', '_blank');
+          // document.getElementById('s_text_input').value
           console.log('Confirm button clicked');
         },
         ctaHovered: () => {
@@ -166,7 +167,7 @@
       }
     };
 
-    const storageKey = settings.storage.key || 's_exit_detection_tracked';
+    const storageKey = settings.storage.key || 's_modal_offer_shown';
     const storageType = settings.storage.type || 'localStorage';
     
     const updateStorageInformation = () => {

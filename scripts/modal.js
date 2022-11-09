@@ -1,6 +1,5 @@
 ;(function () {
   this.Modal = function () {
-
     this.closeButton = null;
     this.modal = null;
     this.overlay = null;
@@ -8,12 +7,8 @@
     this.transitionEnd = transitionSelect();
 
     const defaults = {
-      autoOpen: false,
       className: 'fade-and-drop',
       closeButton: true,
-      content: '',
-      maxWidth: 620,
-      minWidth: 280,
       overlay: true,
       modalClass: '',
       callbackOnClose: function () {
@@ -23,9 +18,6 @@
     if (arguments[0] && typeof arguments[0] === 'object') {
       this.options = extendDefaults(defaults, arguments[0]);
     }
-
-    if (this.options.autoOpen === true) this.open();
-
   };
 
   Modal.prototype.close = function () {
@@ -132,7 +124,7 @@
           that.options.callbackOnClose.apply(that);
         });
       }
-    }, 2000);
+    }, 1000);
   }
 
   function transitionSelect() {
@@ -157,7 +149,6 @@
       key: '', // storage key
       expiresInDays: null // time in days, after that time the key will be removed from the storage and the modal will be shown again
     },
-    ctaUrl: '', // button url to redirect,
     size: {
       maxWidth: '',
       maxHeight: ''
@@ -186,51 +177,62 @@
     },
     loadStrategy: '' || { timeout: null }
   };
-
-  const STORAGE_KEY_DEFAULT = 's_exit_detection_tracked';
-  const STORAGE_EXPIRES_IN_DAYS = 30; // one month
-
-  const WIDTH_DEFAULT = 620;
-  const HEIGHT_DEFAULT = 350;
-
-  const BROWSER_CONFIG_DEFAULT = {
-    [BROWSER.CHROME]: true,
-    [BROWSER.FIREFOX]: true,
-    [BROWSER.EDGE]: true
+  
+  // define default settings
+  const defaults = {
+    storage: {
+      type: 'localStorage',
+      key: 's_modal_offer_shown',
+      expiresInDays: 30
+    },
+    permissions: {
+      os: {
+        [OS.WINDOWS]: true,
+        [OS.LINUX]: true,
+        [OS.MAC]: true
+      },
+      browsers: {
+        [BROWSER.CHROME]: true,
+        [BROWSER.FIREFOX]: true,
+        [BROWSER.EDGE]: true
+      },
+      locationPathName: {
+        included: [],
+        excluded: []
+      },
+      countryCodes: {
+        included: [],
+        excluded: []
+      }
+    },
+    size: {
+      maxWidth: 600,
+      maxHeight: 300
+    },
+    api: {
+      opened: function () {},
+      closed: function () {},
+      ctaClicked: function () {},
+      ctaHovered: function () {}
+    }
   };
 
-  const OS_CONFIG_DEFAULT = {
-    [OS.WINDOWS]: true,
-    [OS.LINUX]: true,
-    [OS.MAC]: true
-  };
-
-  function init(o, ipCountry) {
+  function init(options, ipCountry) {
+    const o = Object.assign({ ...defaults, ...options });
     const {os, browser} = getUserAgentMetaData();
 
     let modalInstance;
     let isModalOpened;
 
-    const browserConfig = (o.permissions && o.permissions.browsers || BROWSER_CONFIG_DEFAULT);
-    const osConfig = (o.permissions && o.permissions.os) || OS_CONFIG_DEFAULT;
-
-    const allowedToShowByBrowserAndOs = browserConfig[browser] && osConfig[os];
-
-    const storage = (o.storage && o.storage.type) || 'localStorage';
-    const storageKey = (o.storage && o.storage.key) || STORAGE_KEY_DEFAULT;
-    const storageExpiresInDays = (o.storage && o.storage.expiresInDays) || STORAGE_EXPIRES_IN_DAYS;
-    const size = {
-      maxWidth: (o.size && o.size.maxWidth) || WIDTH_DEFAULT,
-      maxHeight: (o.size && o.size.maxHeight) || HEIGHT_DEFAULT
-    };
+    const allowedToShowByBrowserAndOs = o.permissions.browsers[browser] && o.permissions.os[os];
 
     const url = location.pathname;
 
-    const pagesToInclude = (o.permissions.locationPathName && o.permissions.locationPathName.included) || [];
-    const pagesExclude = (o.permissions.locationPathName && o.permissions.locationPathName.excluded) || [];
+    const pagesToInclude = o.permissions.locationPathName.included;
+    const pagesExclude = o.permissions.locationPathName.excluded;
 
-    const IPsToInclude = (o.permissions.countryCodes && o.permissions.countryCodes.included) || [];
-    const IPsToExclude = (o.permissions.countryCodes && o.permissions.countryCodes.excluded) || [];
+    const IPsToInclude = o.permissions.countryCodes.included;
+    const IPsToExclude = o.permissions.countryCodes.excluded;
 
     const allowedToShowByIncludedUrls = pagesToInclude.length ? pagesToInclude.includes(url) : true;
     const allowedToShowByExcludedUrls = pagesExclude.length ? !pagesExclude.includes(url) : true;
@@ -242,7 +244,7 @@
     const allowedToShowByIncludedIp = IPsToInclude.length ? IPsToInclude.includes(ipCountry) : true;
     const allowedToShowByExcludedIp = IPsToExclude.length ? !IPsToExclude.includes(ipCountry) : true;
 
-    const isAllowedByStorage = !isNotExpired(storageKey, storage);
+    const isAllowedByStorage = !isNotExpired(o.storage.key, o.storage.type);
 
     const isAllowedToShowConditions =
         isAllowedByStorage &&
@@ -260,31 +262,30 @@
           modalInstance = new Modal({
             content: xhr.response,
             modalClass: o.className || '',
-            maxWidth: size.maxWidth,
-            maxHeight: size.maxHeight,
+            maxWidth: o.size.maxWidth,
+            maxHeight: o.size.maxHeight,
             callbackOnClose: function () {
-              o.api && o.api.closed();
+              o.api.closed();
             }
           });
 
-          modalInstance.open(o.api && o.api.opened);
+          modalInstance.open(o.api.opened);
 
           const confirmButton = document.querySelector('button[type="submit"]');
           try {
             confirmButton.addEventListener('click', function () {
-              o.api && o.api.ctaClicked();
-              o.ctaUrl && window.open(o.ctaUrl, '_blank');
+              o.api.ctaClicked();
               modalInstance.close();
             });
 
             confirmButton.addEventListener('mouseover', function () {
-              o.api && o.api.ctaHovered();
+              o.api.ctaHovered();
             });
           } catch {
             console.warn('No confirmation button[type="submit"] provided.');
           }
 
-          setWithExpiry(storageKey, storageExpiresInDays * 86400000, storage);
+          setWithExpiry(o.storage.key, o.storage.expiresInDays * 86400000, o.storage.type);
           
           // Close modal if clicked Escape
           document.addEventListener('keydown', (event) => {

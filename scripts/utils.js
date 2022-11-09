@@ -171,6 +171,10 @@ function isNotExpired(key, storageType) {
   return true;
 }
 
+/**
+ * @param key
+ * @param storageType
+ */
 function removeFromStorage(key, storageType) {
   const storage = storageType === 'localStorage' ? localStorage : sessionStorage;
   storage.removeItem(key);
